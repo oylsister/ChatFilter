@@ -1,5 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Xml.Schema;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 
@@ -48,7 +50,8 @@ namespace ChatFilter
                 {
                     if (message.Contains(word))
                     {
-                        string pattern = @"\b" + Regex.Escape(word) + @"\b";
+                        var spacedPattern = string.Join(@"\s*", word.ToCharArray());
+                        var pattern = @"\b" + spacedPattern + @"\b";
                         message = Regex.Replace(message, pattern, new string('*', word.Length), RegexOptions.IgnoreCase);
                         found = true;
                     }
@@ -56,7 +59,8 @@ namespace ChatFilter
 
                 if(found)
                 {
-                    client.ExecuteClientCommand($"say {message}");
+                    // client.PrintToChat(message);
+                    Server.NextFrame(() => client.ExecuteClientCommandFromServer($"say {message}"));
                     return HookResult.Handled;
                 }
             }
@@ -76,7 +80,8 @@ namespace ChatFilter
                 {
                     if (message.Contains(word))
                     {
-                        string pattern = @"\b" + Regex.Escape(word) + @"\b";
+                        var spacedPattern = string.Join(@"\s*", word.ToCharArray());
+                        var pattern = @"\b" + spacedPattern + @"\b";
                         message = Regex.Replace(message, pattern, new string('*', word.Length), RegexOptions.IgnoreCase);
                         found = true;
                     }
@@ -84,7 +89,8 @@ namespace ChatFilter
 
                 if (found)
                 {
-                    client.ExecuteClientCommand($"say_team {message}");
+                    // client.PrintToChat(message);
+                    Server.NextFrame(() => client.ExecuteClientCommandFromServer($"say_team {message}"));
                     return HookResult.Handled;
                 }
             }
