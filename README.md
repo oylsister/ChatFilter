@@ -8,4 +8,5 @@
 }
  ```
 This word 'fuck' is filter by plugin.
+
 ![fuck](https://github.com/user-attachments/assets/c28eed65-4e78-4166-b403-599f8cebd91b)
