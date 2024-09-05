@@ -1,16 +1,13 @@
-﻿using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
-using System.Xml.Schema;
-using CounterStrikeSharp.API;
-using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Commands;
+﻿using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.UserMessages;
+using System.Text.Json.Serialization;
 
 namespace ChatFilter
 {
     public class WordFilter : BasePluginConfig
     {
-        [JsonPropertyName("filter_list")] 
-        public List<string> FilterWordList { get; set; } = new List<string>();
+        [JsonPropertyName("filter_list")]
+        public List<string> FilterWordList { get; set; } = [];
     }
 
     public class ChatFilter : BasePlugin, IPluginConfig<WordFilter>
@@ -19,18 +16,17 @@ namespace ChatFilter
         public override string ModuleVersion => "1.0";
         public override string ModuleAuthor => "Oylsister";
 
-        public List<string> defaultFilter = new List<string> { "fuck", "nigger", "niger"};
-        public WordFilter Config { get; set; }
+        public List<string> defaultFilter = ["fuck", "nigger", "niger"];
+        public WordFilter Config { get; set; } = new WordFilter();
 
         public override void Load(bool hotReload)
         {
-            AddCommandListener("say", CommandOnSay, HookMode.Pre);
-            AddCommandListener("say_team", CommandOnSayTeam, HookMode.Pre);
+            HookUserMessage(118, OnMessage, HookMode.Pre);
         }
 
         public void OnConfigParsed(WordFilter config)
         {
-            if(config.FilterWordList.Count <= 0)
+            if (config.FilterWordList.Count <= 0)
             {
                 config.FilterWordList = defaultFilter;
             }
@@ -38,61 +34,21 @@ namespace ChatFilter
             Config = config;
         }
 
-        public HookResult CommandOnSay(CCSPlayerController? client, CommandInfo info)
+        public HookResult OnMessage(UserMessage um)
         {
-            if(client != null)
+            string message = um.ReadString("param2");
+            string originalMessage = message;
+
+            foreach (string word in Config.FilterWordList)
             {
-                var message = info.ArgString;
-
-                bool found = false;
-
-                foreach(var word in Config.FilterWordList)
-                {
-                    if (message.Contains(word))
-                    {
-                        var spacedPattern = string.Join(@"\s*", word.ToCharArray());
-                        var pattern = @"\b" + spacedPattern + @"\b";
-                        message = Regex.Replace(message, pattern, new string('*', word.Length), RegexOptions.IgnoreCase);
-                        found = true;
-                    }
-                }
-
-                if(found)
-                {
-                    // client.PrintToChat(message);
-                    Server.NextFrame(() => client.ExecuteClientCommandFromServer($"say {message}"));
-                    return HookResult.Handled;
-                }
+                string replacement = new('*', word.Length);
+                message = message.Replace(word, replacement, StringComparison.OrdinalIgnoreCase);
             }
 
-            return HookResult.Continue;
-        }
-
-        public HookResult CommandOnSayTeam(CCSPlayerController? client, CommandInfo info)
-        {
-            if (client != null)
+            if (message != originalMessage)
             {
-                var message = info.ArgString;
-
-                bool found = false;
-
-                foreach (var word in Config.FilterWordList)
-                {
-                    if (message.Contains(word))
-                    {
-                        var spacedPattern = string.Join(@"\s*", word.ToCharArray());
-                        var pattern = @"\b" + spacedPattern + @"\b";
-                        message = Regex.Replace(message, pattern, new string('*', word.Length), RegexOptions.IgnoreCase);
-                        found = true;
-                    }
-                }
-
-                if (found)
-                {
-                    // client.PrintToChat(message);
-                    Server.NextFrame(() => client.ExecuteClientCommandFromServer($"say_team {message}"));
-                    return HookResult.Handled;
-                }
+                um.SetString("param2", message);
+                return HookResult.Changed;
             }
 
             return HookResult.Continue;
