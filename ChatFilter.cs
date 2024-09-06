@@ -25,7 +25,7 @@ public partial class ChatFilter : BasePlugin, IPluginConfig<WordFilter>
     {
         try
         {
-            var api = ITagApi.Capability.Get();
+            ITagApi? api = ITagApi.Capability.Get();
 
             if (api == null)
             {
@@ -50,8 +50,8 @@ public partial class ChatFilter : BasePlugin, IPluginConfig<WordFilter>
 
     private HookResult OnMessage(UserMessage um)
     {
-        var message = um.ReadString("param2");
-        var originalMessage = message;
+        string message = um.ReadString("param2");
+        string originalMessage = message;
 
         foreach (string word in Config.FilterWordList)
         {
