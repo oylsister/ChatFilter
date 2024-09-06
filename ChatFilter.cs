@@ -8,8 +8,8 @@ namespace ChatFilter;
 
 public class WordFilter : BasePluginConfig
 {
-    [JsonPropertyName("filter_list")]
-    public List<string> FilterWordList { get; set; } = [];
+    [JsonPropertyName("filter_list")] public List<string> FilterWordList { get; set; } = [];
+    [JsonPropertyName("filter_ip")] public bool FilterIP { get; set; } = false;
 }
 
 public partial class ChatFilter : BasePlugin, IPluginConfig<WordFilter>
@@ -59,11 +59,14 @@ public partial class ChatFilter : BasePlugin, IPluginConfig<WordFilter>
             message = message.Replace(word, replacement, StringComparison.OrdinalIgnoreCase);
         }
 
-        string ipOrNumberPattern = @"\b(?:\d{1,3}[.\s/]){3}\d{1,3}\b";
-        message = Regex.Replace(message, ipOrNumberPattern, match =>
+        if (Config.FilterIP)
         {
-            return NumberRegex().Replace(match.Value, m => new string('*', m.Value.Length));
-        }, RegexOptions.IgnoreCase);
+            string ipOrNumberPattern = @"\b(?:\d{1,3}[.\s/]){3}\d{1,3}\b";
+            message = Regex.Replace(message, ipOrNumberPattern, match =>
+            {
+                return NumberRegex().Replace(match.Value, m => new string('*', m.Value.Length));
+            }, RegexOptions.IgnoreCase);
+        }
 
         if (message != originalMessage)
         {
